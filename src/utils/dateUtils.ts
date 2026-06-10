@@ -13,5 +13,5 @@ export function getDayLabel(startDate: string | null, dayIndex: number): string 
 
 export function formatTime(isoString: string | null): string {
   if (!isoString) return '';
-  return format(parseISO(isoString), 'h:mm a');
+  return format(parseISO(isoString), 'MMM d, h:mm a');
 }

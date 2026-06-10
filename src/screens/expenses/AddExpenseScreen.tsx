@@ -1,29 +1,37 @@
-import React, { useState } from 'react';
-import { View, Text, TextInput, StyleSheet, ScrollView, Alert, TouchableOpacity } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, TextInput, StyleSheet, ScrollView, Alert, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { RouteProp, useNavigation, useRoute } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { createExpense } from '../../api/expenses';
+import { fetchMembers } from '../../api/trips';
 import { useAuthStore } from '../../store/authStore';
-import { useTripStore } from '../../store/tripStore';
+import { TripMember } from '../../types/app.types';
 import Button from '../../components/common/Button';
-import Avatar from '../../components/common/Avatar';
-import { TripStackParamList } from '../../navigation/types';
+import { AppStackParamList, TripStackParamList } from '../../navigation/types';
 
 type Route = RouteProp<TripStackParamList, 'AddExpense'>;
-type Nav = StackNavigationProp<TripStackParamList>;
+type Nav = StackNavigationProp<AppStackParamList>;
 
 export default function AddExpenseScreen() {
   const nav = useNavigation<Nav>();
   const route = useRoute<Route>();
   const { tripId } = route.params;
   const user = useAuthStore((s) => s.user);
-  const { currentMembers } = useTripStore();
 
+  const [members, setMembers] = useState<TripMember[]>([]);
   const [title, setTitle] = useState('');
   const [amount, setAmount] = useState('');
   const [paidById, setPaidById] = useState(user?.id ?? '');
-  const [splitMemberIds, setSplitMemberIds] = useState<string[]>(currentMembers.map((m) => m.user_id));
+  const [splitMemberIds, setSplitMemberIds] = useState<string[]>([]);
+  const [loadingMembers, setLoadingMembers] = useState(true);
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    fetchMembers(tripId).then((m) => {
+      setMembers(m);
+      setSplitMemberIds(m.map((member) => member.user_id));
+    }).catch(() => {}).finally(() => setLoadingMembers(false));
+  }, [tripId]);
 
   function toggleSplit(userId: string) {
     setSplitMemberIds((prev) =>
@@ -52,12 +60,20 @@ export default function AddExpenseScreen() {
         { trip_id: tripId, created_by: user.id, title: title.trim(), amount: amt, currency: 'USD', paid_by: paidById, stop_id: null },
         splits
       );
-      nav.goBack();
+      if (nav.canGoBack()) {
+        nav.goBack();
+      } else {
+        nav.navigate('TripDetail', { tripId });
+      }
     } catch (e: any) {
       Alert.alert('Error', e.message);
     } finally {
       setLoading(false);
     }
+  }
+
+  if (loadingMembers) {
+    return <View style={styles.center}><ActivityIndicator size="large" color="#2563EB" /></View>;
   }
 
   return (
@@ -70,13 +86,12 @@ export default function AddExpenseScreen() {
 
       <Text style={styles.label}>Paid By</Text>
       <View style={styles.memberList}>
-        {currentMembers.map((m) => (
+        {members.map((m) => (
           <TouchableOpacity
             key={m.user_id}
             style={[styles.memberChip, paidById === m.user_id && styles.memberChipSelected]}
             onPress={() => setPaidById(m.user_id)}
           >
-            <Avatar uri={m.profile?.avatar_url} name={m.profile?.display_name} size={28} />
             <Text style={[styles.memberChipText, paidById === m.user_id && styles.memberChipTextSelected]}>
               {m.profile?.display_name ?? 'Member'}
             </Text>
@@ -86,7 +101,7 @@ export default function AddExpenseScreen() {
 
       <Text style={styles.label}>Split Between</Text>
       <View style={styles.memberList}>
-        {currentMembers.map((m) => {
+        {members.map((m) => {
           const selected = splitMemberIds.includes(m.user_id);
           return (
             <TouchableOpacity
@@ -94,7 +109,6 @@ export default function AddExpenseScreen() {
               style={[styles.memberChip, selected && styles.memberChipSelected]}
               onPress={() => toggleSplit(m.user_id)}
             >
-              <Avatar uri={m.profile?.avatar_url} name={m.profile?.display_name} size={28} />
               <Text style={[styles.memberChipText, selected && styles.memberChipTextSelected]}>
                 {m.profile?.display_name ?? 'Member'}
               </Text>
@@ -117,11 +131,12 @@ export default function AddExpenseScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#fff' },
+  center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   content: { padding: 20, paddingBottom: 60 },
   label: { fontSize: 14, fontWeight: '600', color: '#374151', marginBottom: 8, marginTop: 16 },
   input: { borderWidth: 1, borderColor: '#D1D5DB', borderRadius: 10, padding: 14, fontSize: 16, backgroundColor: '#F9FAFB' },
-  memberList: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  memberChip: { flexDirection: 'row', alignItems: 'center', gap: 6, borderWidth: 1.5, borderColor: '#D1D5DB', borderRadius: 24, paddingHorizontal: 12, paddingVertical: 6, backgroundColor: '#F9FAFB' },
+  memberList: { flexDirection: 'row', flexWrap: 'wrap' },
+  memberChip: { flexDirection: 'row', alignItems: 'center', borderWidth: 1.5, borderColor: '#D1D5DB', borderRadius: 24, paddingHorizontal: 12, paddingVertical: 6, backgroundColor: '#F9FAFB', margin: 4 },
   memberChipSelected: { borderColor: '#2563EB', backgroundColor: '#EFF6FF' },
   memberChipText: { fontSize: 14, color: '#374151', fontWeight: '500' },
   memberChipTextSelected: { color: '#1E40AF', fontWeight: '600' },

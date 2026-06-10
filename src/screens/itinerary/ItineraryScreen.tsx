@@ -8,10 +8,10 @@ import { deleteStop } from '../../api/itinerary';
 import { Stop } from '../../types/app.types';
 import { getDayLabel, formatTime } from '../../utils/dateUtils';
 import { useTripStore } from '../../store/tripStore';
-import { TripStackParamList, TripTabParamList } from '../../navigation/types';
+import { AppStackParamList, TripStackParamList, TripTabParamList } from '../../navigation/types';
 
 type Props = MaterialTopTabScreenProps<TripTabParamList, 'Itinerary'>;
-type Nav = StackNavigationProp<TripStackParamList>;
+type Nav = StackNavigationProp<AppStackParamList>;
 
 export default function ItineraryScreen({ route }: Props) {
   const { tripId } = route.params;
@@ -75,7 +75,7 @@ export default function ItineraryScreen({ route }: Props) {
           </TouchableOpacity>
         )}
       />
-      <TouchableOpacity style={styles.fab} onPress={() => nav.navigate('AddStop', { tripId })}>
+      <TouchableOpacity style={styles.fab} onPress={() => (nav.getParent() ?? nav).navigate('AddStop', { tripId })}>
         <Text style={styles.fabText}>+ Add Stop</Text>
       </TouchableOpacity>
     </View>

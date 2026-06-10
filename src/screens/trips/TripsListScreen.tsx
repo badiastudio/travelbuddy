@@ -33,7 +33,7 @@ export default function TripsListScreen() {
   useEffect(() => { load(); }, []);
 
   function openTrip(tripId: string) {
-    nav.navigate('TripStack', { screen: 'TripDetail', params: { tripId } });
+    nav.navigate('TripDetail', { tripId });
   }
 
   return (
@@ -42,7 +42,7 @@ export default function TripsListScreen() {
         <Text style={styles.headerTitle}>My Trips</Text>
         <TouchableOpacity
           style={styles.newBtn}
-          onPress={() => nav.navigate('TripStack', { screen: 'TripDetail', params: { tripId: 'new' } })}
+          onPress={() => nav.navigate('TripDetail', { tripId: 'new' })}
         >
           <Text style={styles.newBtnText}>+ New</Text>
         </TouchableOpacity>

@@ -9,12 +9,12 @@ import ItineraryScreen from '../itinerary/ItineraryScreen';
 import MapViewScreen from '../itinerary/MapViewScreen';
 import ExpensesScreen from '../expenses/ExpensesScreen';
 import MediaScreen from '../media/MediaScreen';
-import { TripStackParamList, TripTabParamList } from '../../navigation/types';
+import { AppStackParamList, TripStackParamList, TripTabParamList } from '../../navigation/types';
 import CreateTripScreen from './CreateTripScreen';
 
 const Tab = createMaterialTopTabNavigator<TripTabParamList>();
 type Route = RouteProp<TripStackParamList, 'TripDetail'>;
-type Nav = StackNavigationProp<TripStackParamList>;
+type Nav = StackNavigationProp<AppStackParamList>;
 
 export default function TripDetailScreen() {
   const route = useRoute<Route>();

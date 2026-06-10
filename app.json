@@ -10,7 +10,11 @@
     "ios": {
       "supportsTablet": true,
       "config": {
-        "googleMapsApiKey": "your_google_maps_api_key_ios"
+        "googleMapsApiKey": "AIzaSyAw4_SkDhOOf3hMNyRnw2r4mG0Y21aCBKM"
+      },
+      "bundleIdentifier": "com.cshunnarah.travelPro",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {
@@ -23,9 +27,12 @@
       "predictiveBackGestureEnabled": false,
       "config": {
         "googleMaps": {
-          "apiKey": "your_google_maps_api_key_android"
+          "apiKey": "AIzaSyAw4_SkDhOOf3hMNyRnw2r4mG0Y21aCBKM"
         }
-      }
+      },
+      "permissions": [
+        "android.permission.RECORD_AUDIO"
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -35,6 +42,11 @@
       "@react-native-community/datetimepicker",
       "expo-image-picker",
       "expo-document-picker"
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "4cb5d17f-4068-41e6-8421-58f80c24509a"
+      }
+    }
   }
 }

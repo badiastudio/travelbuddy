@@ -73,6 +73,9 @@ export interface Media {
   mime_type: string;
   size_bytes: number | null;
   thumbnail_path: string | null;
+  display_name: string | null;
+  description: string | null;
+  taken_at: string | null;
   created_at: string;
   signedUrl?: string;
 }

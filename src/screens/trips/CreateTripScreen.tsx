@@ -1,9 +1,8 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, StyleSheet, ScrollView, Alert, TouchableOpacity } from 'react-native';
-import DateTimePicker from '@react-native-community/datetimepicker';
+import { View, Text, TextInput, StyleSheet, ScrollView, Alert, TouchableOpacity, Platform } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
-import { format } from 'date-fns';
+import { format, parseISO } from 'date-fns';
 import { createTrip } from '../../api/trips';
 import { useAuthStore } from '../../store/authStore';
 import Button from '../../components/common/Button';
@@ -12,6 +11,39 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 type Nav = StackNavigationProp<AppStackParamList>;
 
+function DateInput({ label, value, onChange }: { label: string; value: Date | null; onChange: (d: Date) => void }) {
+  if (Platform.OS === 'web') {
+    return (
+      <View>
+        <Text style={styles.label}>{label}</Text>
+        <input
+          type="date"
+          value={value ? format(value, 'yyyy-MM-dd') : ''}
+          onChange={(e) => { if (e.target.value) onChange(parseISO(e.target.value)); }}
+          style={{ border: '1px solid #D1D5DB', borderRadius: 10, padding: 14, fontSize: 16, backgroundColor: '#F9FAFB', width: '100%', boxSizing: 'border-box' as any }}
+        />
+      </View>
+    );
+  }
+
+  // Native: lazy-load DateTimePicker to avoid web crash
+  const DateTimePicker = require('@react-native-community/datetimepicker').default;
+  const [show, setShow] = useState(false);
+  return (
+    <View>
+      <Text style={styles.label}>{label}</Text>
+      <TouchableOpacity style={styles.dateBtn} onPress={() => setShow(true)}>
+        <Text style={value ? styles.dateText : styles.datePlaceholder}>
+          {value ? format(value, 'MMM d, yyyy') : `Select ${label.toLowerCase()}`}
+        </Text>
+      </TouchableOpacity>
+      {show && (
+        <DateTimePicker value={value ?? new Date()} mode="date" onChange={(_: any, d: Date) => { setShow(false); if (d) onChange(d); }} />
+      )}
+    </View>
+  );
+}
+
 export default function CreateTripScreen() {
   const nav = useNavigation<Nav>();
   const user = useAuthStore((s) => s.user);
@@ -19,8 +51,6 @@ export default function CreateTripScreen() {
   const [description, setDescription] = useState('');
   const [startDate, setStartDate] = useState<Date | null>(null);
   const [endDate, setEndDate] = useState<Date | null>(null);
-  const [showStart, setShowStart] = useState(false);
-  const [showEnd, setShowEnd] = useState(false);
   const [loading, setLoading] = useState(false);
 
   async function handleCreate() {
@@ -34,7 +64,7 @@ export default function CreateTripScreen() {
         start_date: startDate ? format(startDate, 'yyyy-MM-dd') : null,
         end_date: endDate ? format(endDate, 'yyyy-MM-dd') : null,
       });
-      nav.replace('TripStack', { screen: 'TripDetail', params: { tripId: trip.id } });
+      nav.replace('TripDetail', { tripId: trip.id });
     } catch (e: any) {
       Alert.alert('Error', e.message);
     } finally {
@@ -58,25 +88,8 @@ export default function CreateTripScreen() {
         <Text style={styles.label}>Description</Text>
         <TextInput style={[styles.input, styles.textarea]} placeholder="What's this trip about?" multiline numberOfLines={3} value={description} onChangeText={setDescription} />
 
-        <Text style={styles.label}>Start Date</Text>
-        <TouchableOpacity style={styles.dateBtn} onPress={() => setShowStart(true)}>
-          <Text style={startDate ? styles.dateText : styles.datePlaceholder}>
-            {startDate ? format(startDate, 'MMM d, yyyy') : 'Select start date'}
-          </Text>
-        </TouchableOpacity>
-        {showStart && (
-          <DateTimePicker value={startDate ?? new Date()} mode="date" onChange={(_, d) => { setShowStart(false); if (d) setStartDate(d); }} />
-        )}
-
-        <Text style={styles.label}>End Date</Text>
-        <TouchableOpacity style={styles.dateBtn} onPress={() => setShowEnd(true)}>
-          <Text style={endDate ? styles.dateText : styles.datePlaceholder}>
-            {endDate ? format(endDate, 'MMM d, yyyy') : 'Select end date'}
-          </Text>
-        </TouchableOpacity>
-        {showEnd && (
-          <DateTimePicker value={endDate ?? startDate ?? new Date()} mode="date" minimumDate={startDate ?? undefined} onChange={(_, d) => { setShowEnd(false); if (d) setEndDate(d); }} />
-        )}
+        <DateInput label="Start Date" value={startDate} onChange={setStartDate} />
+        <DateInput label="End Date" value={endDate} onChange={setEndDate} />
 
         <Button title="Create Trip" onPress={handleCreate} loading={loading} style={styles.createBtn} />
       </ScrollView>

@@ -12,14 +12,14 @@ export async function fetchStops(tripId: string): Promise<Stop[]> {
   return data ?? [];
 }
 
-export async function createStop(stop: Omit<Stop, 'id' | 'created_at'>): Promise<Stop> {
-  const { data, error } = await supabase
+export async function createStop(stop: Omit<Stop, 'id' | 'created_at'>): Promise<void> {
+  const { error } = await supabase
     .from('stops')
-    .insert(stop)
-    .select()
-    .single();
-  if (error) throw error;
-  return data;
+    .insert(stop);
+  if (error) {
+    console.error('createStop error:', JSON.stringify(error));
+    throw error;
+  }
 }
 
 export async function updateStop(stopId: string, updates: Partial<Stop>): Promise<Stop> {

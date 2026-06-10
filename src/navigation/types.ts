@@ -24,8 +24,7 @@ export type TripStackParamList = {
 
 export type AppStackParamList = {
   Tabs: undefined;
-  TripStack: NavigatorScreenParams<TripStackParamList>;
-};
+} & TripStackParamList;
 
 export type TabParamList = {
   MyTrips: undefined;

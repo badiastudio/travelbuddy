@@ -1,4 +1,4 @@
-import * as FileSystem from 'expo-file-system';
+import { Platform } from 'react-native';
 import { supabase } from '../lib/supabase';
 import { Media } from '../types/app.types';
 
@@ -11,9 +11,17 @@ export async function uploadMedia(
   fileName: string,
   mimeType: string
 ): Promise<string> {
-  const base64 = await FileSystem.readAsStringAsync(localUri, {
-    encoding: FileSystem.EncodingType.Base64,
-  });
+  let base64: string;
+  if (localUri.startsWith('data:')) {
+    // Web: data URL — strip the prefix
+    base64 = localUri.split(',')[1];
+  } else {
+    // Native: use expo-file-system
+    const FileSystem = require('expo-file-system');
+    base64 = await FileSystem.readAsStringAsync(localUri, {
+      encoding: FileSystem.EncodingType.Base64,
+    });
+  }
   const arrayBuffer = Uint8Array.from(atob(base64), (c) => c.charCodeAt(0));
   const storagePath = `${tripId}/${userId}/${Date.now()}_${fileName}`;
 
@@ -51,14 +59,14 @@ export async function fetchMedia(tripId: string): Promise<Media[]> {
 
 export async function saveMediaRecord(
   record: Omit<Media, 'id' | 'created_at' | 'signedUrl'>
-): Promise<Media> {
-  const { data, error } = await supabase
+): Promise<void> {
+  const { error } = await supabase
     .from('media')
-    .insert(record)
-    .select()
-    .single();
-  if (error) throw error;
-  return data;
+    .insert(record);
+  if (error) {
+    console.error('saveMediaRecord error:', JSON.stringify(error));
+    throw error;
+  }
 }
 
 export async function deleteMedia(mediaId: string, storagePath: string): Promise<void> {

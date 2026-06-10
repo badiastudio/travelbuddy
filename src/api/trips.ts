@@ -25,19 +25,21 @@ export async function createTrip(
   ownerId: string,
   trip: Pick<Trip, 'title' | 'description' | 'start_date' | 'end_date'>
 ): Promise<Trip> {
-  const { data, error } = await supabase
+  // Insert trip and get back the row (owner_id = auth.uid() satisfies insert policy)
+  const { data, error: tripError } = await supabase
     .from('trips')
     .insert({ ...trip, owner_id: ownerId })
     .select()
     .single();
-  if (error) throw error;
+  if (tripError) throw tripError;
 
-  // auto-add owner as member
+  // Add owner as member so RLS select policies work going forward
   await supabase.from('trip_members').insert({
     trip_id: data.id,
     user_id: ownerId,
     role: 'owner',
   });
+
   return data;
 }
 

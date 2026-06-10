@@ -12,8 +12,7 @@ import MediaDetailScreen from '../screens/media/MediaDetailScreen';
 import InviteMembersScreen from '../screens/trips/InviteMembersScreen';
 
 const Tab = createBottomTabNavigator<TabParamList>();
-const AppNav = createStackNavigator<AppStackParamList>();
-const TripNav = createStackNavigator<TripStackParamList>();
+const AppNav = createStackNavigator<AppStackParamList & TripStackParamList>();
 
 function Tabs() {
   return (
@@ -24,24 +23,16 @@ function Tabs() {
   );
 }
 
-function TripStack() {
-  return (
-    <TripNav.Navigator>
-      <TripNav.Screen name="TripDetail" component={TripDetailScreen} options={{ headerShown: false }} />
-      <TripNav.Screen name="AddStop" component={AddStopScreen} options={{ title: 'Add Stop', presentation: 'modal' }} />
-      <TripNav.Screen name="AddExpense" component={AddExpenseScreen} options={{ title: 'Add Expense', presentation: 'modal' }} />
-      <TripNav.Screen name="Balance" component={BalanceScreen} options={{ title: 'Balances' }} />
-      <TripNav.Screen name="MediaDetail" component={MediaDetailScreen} options={{ title: '', headerTransparent: true }} />
-      <TripNav.Screen name="InviteMembers" component={InviteMembersScreen} options={{ title: 'Invite Members' }} />
-    </TripNav.Navigator>
-  );
-}
-
 export default function AppStack() {
   return (
     <AppNav.Navigator screenOptions={{ headerShown: false }}>
       <AppNav.Screen name="Tabs" component={Tabs} />
-      <AppNav.Screen name="TripStack" component={TripStack} />
+      <AppNav.Screen name="TripDetail" component={TripDetailScreen} />
+      <AppNav.Screen name="AddStop" component={AddStopScreen} options={{ headerShown: true, title: 'Add Stop' }} />
+      <AppNav.Screen name="AddExpense" component={AddExpenseScreen} options={{ headerShown: true, title: 'Add Expense' }} />
+      <AppNav.Screen name="Balance" component={BalanceScreen} options={{ headerShown: true, title: 'Balances' }} />
+      <AppNav.Screen name="MediaDetail" component={MediaDetailScreen} options={{ headerShown: true, title: '' }} />
+      <AppNav.Screen name="InviteMembers" component={InviteMembersScreen} options={{ headerShown: true, title: 'Invite Members' }} />
     </AppNav.Navigator>
   );
 }

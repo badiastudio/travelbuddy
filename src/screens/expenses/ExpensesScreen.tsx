@@ -1,14 +1,14 @@
 import React from 'react';
 import { View, Text, FlatList, StyleSheet, TouchableOpacity, RefreshControl } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useNavigationState } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { MaterialTopTabScreenProps } from '@react-navigation/material-top-tabs';
 import { useExpenses } from '../../hooks/useExpenses';
 import { formatCurrency } from '../../utils/currencyUtils';
-import { TripStackParamList, TripTabParamList } from '../../navigation/types';
+import { AppStackParamList, TripStackParamList, TripTabParamList } from '../../navigation/types';
 
 type Props = MaterialTopTabScreenProps<TripTabParamList, 'Expenses'>;
-type Nav = StackNavigationProp<TripStackParamList>;
+type Nav = StackNavigationProp<AppStackParamList>;
 
 export default function ExpensesScreen({ route }: Props) {
   const { tripId } = route.params;
@@ -23,7 +23,7 @@ export default function ExpensesScreen({ route }: Props) {
         <View style={styles.totalBar}>
           <Text style={styles.totalLabel}>Total Spent</Text>
           <Text style={styles.totalAmount}>{formatCurrency(total)}</Text>
-          <TouchableOpacity onPress={() => nav.navigate('Balance', { tripId })}>
+          <TouchableOpacity onPress={() => (nav.getParent() ?? nav).navigate('Balance', { tripId })}>
             <Text style={styles.balanceLink}>View Balances →</Text>
           </TouchableOpacity>
         </View>
@@ -51,7 +51,7 @@ export default function ExpensesScreen({ route }: Props) {
           </View>
         )}
       />
-      <TouchableOpacity style={styles.fab} onPress={() => nav.navigate('AddExpense', { tripId })}>
+      <TouchableOpacity style={styles.fab} onPress={() => (nav.getParent() ?? nav).navigate('AddExpense', { tripId })}>
         <Text style={styles.fabText}>+ Add Expense</Text>
       </TouchableOpacity>
     </View>
@@ -60,7 +60,7 @@ export default function ExpensesScreen({ route }: Props) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F9FAFB' },
-  totalBar: { backgroundColor: '#EFF6FF', padding: 16, flexDirection: 'row', alignItems: 'center', gap: 8 },
+  totalBar: { backgroundColor: '#EFF6FF', padding: 16, flexDirection: 'row', alignItems: 'center' },
   totalLabel: { fontSize: 14, color: '#374151', flex: 1 },
   totalAmount: { fontSize: 18, fontWeight: '700', color: '#1E40AF' },
   balanceLink: { fontSize: 14, color: '#2563EB', fontWeight: '600' },
