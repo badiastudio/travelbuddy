@@ -30,7 +30,7 @@ export default function RootNavigator() {
 
   return (
     <NavigationContainer linking={{ prefixes: [prefix] }}>
-      {session ? <AppStack /> : <AuthStack />}
+      {true /* DEV: skip auth */ ? <AppStack /> : <AuthStack />}
     </NavigationContainer>
   );
 }
