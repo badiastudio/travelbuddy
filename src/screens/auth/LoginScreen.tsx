@@ -29,7 +29,7 @@ export default function LoginScreen() {
   return (
     <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <View style={styles.inner}>
-        <Text style={styles.logo}>✈️ TravelPro</Text>
+        <Text style={styles.logo}>✈️ travelBuddy</Text>
         <Text style={styles.title}>Welcome back</Text>
 
         <TextInput

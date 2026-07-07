@@ -13,7 +13,7 @@ export default function InviteMembersScreen() {
 
   async function handleShare() {
     try {
-      await Share.share({ message: `Join my trip on TravelPro: ${link}`, url: link });
+      await Share.share({ message: `Join my trip on travelBuddy: ${link}`, url: link });
     } catch (e: any) {
       Alert.alert('Error', e.message);
     }

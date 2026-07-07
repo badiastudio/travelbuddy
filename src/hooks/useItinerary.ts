@@ -1,9 +1,8 @@
 import { useEffect, useState, useCallback } from 'react';
 import { fetchStops } from '../api/itinerary';
 import { Stop } from '../types/app.types';
-import { supabase } from '../lib/supabase';
 
-export function useItinerary(tripId: string) {
+export function useItinerary(tripId: string, archived = false) {
   const [stops, setStops] = useState<Stop[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -12,27 +11,16 @@ export function useItinerary(tripId: string) {
     setLoading(true);
     setError(null);
     try {
-      const data = await fetchStops(tripId);
+      const data = await fetchStops(tripId, archived);
       setStops(data);
     } catch (e: any) {
       setError(e.message);
     } finally {
       setLoading(false);
     }
-  }, [tripId]);
+  }, [tripId, archived]);
 
-  useEffect(() => {
-    load();
-
-    const channel = supabase
-      .channel(`stops:${tripId}`)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'stops', filter: `trip_id=eq.${tripId}` }, () => {
-        load();
-      })
-      .subscribe();
-
-    return () => { supabase.removeChannel(channel); };
-  }, [tripId]);
+  useEffect(() => { load(); }, [load]);
 
   return { stops, loading, error, reload: load };
 }

@@ -1,20 +1,23 @@
 {
   "expo": {
-    "name": "travelPro",
+    "name": "Travel Buddy+",
     "slug": "travelPro",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "scheme": "travelpro",
+    "newArchEnabled": false,
     "ios": {
       "supportsTablet": true,
+      "supportsMacCatalyst": false,
       "config": {
         "googleMapsApiKey": "AIzaSyAw4_SkDhOOf3hMNyRnw2r4mG0Y21aCBKM"
       },
       "bundleIdentifier": "com.cshunnarah.travelPro",
       "infoPlist": {
-        "ITSAppUsesNonExemptEncryption": false
+        "ITSAppUsesNonExemptEncryption": false,
+        "NSLocationWhenInUseUsageDescription": "TravelPro uses your location to show where you are on the trip map."
       }
     },
     "android": {
@@ -32,16 +35,33 @@
       },
       "permissions": [
         "android.permission.RECORD_AUDIO"
-      ]
+      ],
+      "package": "com.cshunnarah.travelPro"
     },
     "web": {
       "favicon": "./assets/favicon.png"
     },
     "plugins": [
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#B8DCE8",
+          "image": "./assets/travel-buddy-splash.png",
+          "imageWidth": 320,
+          "resizeMode": "contain"
+        }
+      ],
       "expo-image",
       "@react-native-community/datetimepicker",
       "expo-image-picker",
-      "expo-document-picker"
+      "expo-document-picker",
+      [
+        "react-native-maps",
+        {
+          "googleMapsApiKey": "AIzaSyAw4_SkDhOOf3hMNyRnw2r4mG0Y21aCBKM"
+        }
+      ],
+      "expo-sharing"
     ],
     "extra": {
       "eas": {

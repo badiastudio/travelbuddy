@@ -4,7 +4,7 @@ import { useAuthStore } from '../store/authStore';
 import { fetchProfile } from '../api/auth';
 
 export function useAuthListener() {
-  const { setSession, setProfile } = useAuthStore();
+  const { setSession, setProfile, setInitialized } = useAuthStore();
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -12,7 +12,10 @@ export function useAuthListener() {
       if (session?.user) {
         fetchProfile(session.user.id)
           .then(setProfile)
-          .catch(() => {});
+          .catch(() => {})
+          .finally(() => setInitialized(true));
+      } else {
+        setInitialized(true);
       }
     });
 

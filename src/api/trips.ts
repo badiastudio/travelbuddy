@@ -34,11 +34,12 @@ export async function createTrip(
   if (tripError) throw tripError;
 
   // Add owner as member so RLS select policies work going forward
-  await supabase.from('trip_members').insert({
+  const { error: memberError } = await supabase.from('trip_members').insert({
     trip_id: data.id,
     user_id: ownerId,
     role: 'owner',
   });
+  if (memberError) throw memberError;
 
   return data;
 }
@@ -66,6 +67,31 @@ export async function fetchMembers(tripId: string): Promise<TripMember[]> {
     .eq('trip_id', tripId);
   if (error) throw error;
   return data ?? [];
+}
+
+export async function duplicateTrip(originalTripId: string, userId: string): Promise<Trip> {
+  const original = await fetchTrip(originalTripId);
+  const { data, error } = await supabase
+    .from('trips')
+    .insert({
+      title: `${original.title} (Copy)`,
+      description: original.description,
+      start_date: original.start_date,
+      end_date: original.end_date,
+      budget: original.budget,
+      budget_currency: original.budget_currency,
+      owner_id: userId,
+    })
+    .select()
+    .single();
+  if (error) throw error;
+  const { error: memberError } = await supabase.from('trip_members').insert({
+    trip_id: data.id,
+    user_id: userId,
+    role: 'owner',
+  });
+  if (memberError) throw memberError;
+  return data;
 }
 
 export async function joinTripByToken(userId: string, token: string): Promise<Trip> {

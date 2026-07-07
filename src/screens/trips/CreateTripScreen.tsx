@@ -11,6 +11,15 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 type Nav = StackNavigationProp<AppStackParamList>;
 
+const TEMPLATES = [
+  { label: '🏖️ Beach', description: 'Sun, sand, and relaxation. Beachside hotels, water sports, and sunset cocktails.' },
+  { label: '🏔️ Adventure', description: 'Hiking, camping, and exploring the great outdoors.' },
+  { label: '🏛️ Culture', description: 'Museums, historical sites, architecture, and local experiences.' },
+  { label: '🍜 Food Tour', description: 'Discovering local cuisine, street food, restaurants, and cooking classes.' },
+  { label: '🚂 Road Trip', description: 'Hitting the open road, roadside attractions, and scenic drives.' },
+  { label: '🌍 Backpacking', description: 'Budget travel, hostels, and off-the-beaten-path adventures.' },
+];
+
 function DateInput({ label, value, onChange }: { label: string; value: Date | null; onChange: (d: Date) => void }) {
   if (Platform.OS === 'web') {
     return (
@@ -52,10 +61,11 @@ export default function CreateTripScreen() {
   const [startDate, setStartDate] = useState<Date | null>(null);
   const [endDate, setEndDate] = useState<Date | null>(null);
   const [loading, setLoading] = useState(false);
+  const [selectedTemplate, setSelectedTemplate] = useState<string | null>(null);
 
   async function handleCreate() {
     if (!title.trim()) { Alert.alert('Please enter a trip name'); return; }
-    if (!user) return;
+    if (!user) { Alert.alert('Not signed in', 'Please sign in to create a trip.'); return; }
     setLoading(true);
     try {
       const trip = await createTrip(user.id, {
@@ -82,6 +92,31 @@ export default function CreateTripScreen() {
         <View style={{ width: 60 }} />
       </View>
       <ScrollView contentContainerStyle={styles.form}>
+        <Text style={styles.label}>Templates</Text>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.templateRow}>
+          {TEMPLATES.map((t) => {
+            const active = selectedTemplate === t.label;
+            return (
+              <TouchableOpacity
+                key={t.label}
+                style={[styles.templateChip, active && styles.templateChipActive]}
+                onPress={() => {
+                  if (active) {
+                    setSelectedTemplate(null);
+                    setDescription('');
+                  } else {
+                    setSelectedTemplate(t.label);
+                    setDescription(t.description);
+                  }
+                }}
+                activeOpacity={0.7}
+              >
+                <Text style={[styles.templateChipText, active && styles.templateChipTextActive]}>{t.label}</Text>
+              </TouchableOpacity>
+            );
+          })}
+        </ScrollView>
+
         <Text style={styles.label}>Trip Name *</Text>
         <TextInput style={styles.input} placeholder="e.g. Europe Summer 2026" value={title} onChangeText={setTitle} />
 
@@ -110,4 +145,9 @@ const styles = StyleSheet.create({
   dateText: { fontSize: 16, color: '#111827' },
   datePlaceholder: { fontSize: 16, color: '#9CA3AF' },
   createBtn: { marginTop: 32 },
+  templateRow: { flexDirection: 'row', gap: 8, paddingVertical: 4 },
+  templateChip: { borderRadius: 12, borderWidth: 1, borderColor: '#D1D5DB', paddingHorizontal: 14, paddingVertical: 8, backgroundColor: '#fff' },
+  templateChipActive: { backgroundColor: '#2563EB', borderColor: '#2563EB' },
+  templateChipText: { fontSize: 14, color: '#374151', fontWeight: '500' },
+  templateChipTextActive: { color: '#fff' },
 });

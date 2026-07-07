@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
+import { View, ActivityIndicator } from 'react-native';
 import * as Linking from 'expo-linking';
 import { useAuthStore } from '../store/authStore';
 import { useAuthListener } from '../hooks/useAuth';
@@ -12,8 +13,8 @@ const prefix = Linking.createURL('/');
 export default function RootNavigator() {
   useAuthListener();
   const session = useAuthStore((s) => s.session);
+  const initialized = useAuthStore((s) => s.initialized);
 
-  // Handle deep links for invite tokens when the user is already signed in
   useEffect(() => {
     const handleUrl = async ({ url }: { url: string }) => {
       if (!session?.user) return;
@@ -28,9 +29,17 @@ export default function RootNavigator() {
     return () => sub.remove();
   }, [session]);
 
+  if (!initialized) {
+    return (
+      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#fff' }}>
+        <ActivityIndicator size="large" color="#2563EB" />
+      </View>
+    );
+  }
+
   return (
     <NavigationContainer linking={{ prefixes: [prefix] }}>
-      {true /* DEV: skip auth */ ? <AppStack /> : <AuthStack />}
+      {session ? <AppStack /> : <AuthStack />}
     </NavigationContainer>
   );
 }

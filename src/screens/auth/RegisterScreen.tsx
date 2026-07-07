@@ -35,7 +35,7 @@ export default function RegisterScreen() {
   return (
     <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <View style={styles.inner}>
-        <Text style={styles.logo}>✈️ TravelPro</Text>
+        <Text style={styles.logo}>✈️ travelBuddy</Text>
         <Text style={styles.title}>Create account</Text>
 
         <TextInput style={styles.input} placeholder="Your name" value={name} onChangeText={setName} />

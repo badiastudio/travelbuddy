@@ -3,9 +3,12 @@ import { View, Text, TextInput, StyleSheet, ScrollView, Alert, TouchableOpacity,
 import { format } from 'date-fns';
 import { RouteProp, useNavigation, useRoute } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
-import { createStop } from '../../api/itinerary';
+import { createStop, updateStop } from '../../api/itinerary';
 import { useAuthStore } from '../../store/authStore';
+import { useTripStore } from '../../store/tripStore';
 import Button from '../../components/common/Button';
+import CategoryPicker from '../../components/common/CategoryPicker';
+import { STOP_CATEGORIES } from '../../constants/categories';
 import { AppStackParamList, TripStackParamList } from '../../navigation/types';
 
 type Route = RouteProp<TripStackParamList, 'AddStop'>;
@@ -115,6 +118,7 @@ function NativeLocationInput({ value, onChangeText, onSelectPlace }: {
           onSelectPlace(text, null, null);
         },
       }}
+      flatListProps={{ nestedScrollEnabled: true }}
       styles={{
         container: { marginBottom: 4 },
         textInput: { ...styles.input, marginBottom: 0 },
@@ -183,8 +187,10 @@ function DateTimeInput({ label, value, onChange }: { label: string; value: Date 
 export default function AddStopScreen() {
   const nav = useNavigation<Nav>();
   const route = useRoute<Route>();
-  const { tripId, dayIndex } = route.params;
+  const { tripId, dayIndex, stopId } = route.params;
   const user = useAuthStore((s) => s.user);
+  const trip = useTripStore((s) => s.currentTrip);
+  const isEditing = !!stopId;
 
   const [title, setTitle] = useState('');
   const [notes, setNotes] = useState('');
@@ -193,7 +199,26 @@ export default function AddStopScreen() {
   const [lng, setLng] = useState<number | null>(null);
   const [startTime, setStartTime] = useState<Date | null>(null);
   const [endTime, setEndTime] = useState<Date | null>(null);
+  const [category, setCategory] = useState<string | null>(null);
+  const [bookingUrl, setBookingUrl] = useState('');
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (!stopId) return;
+    const { supabase } = require('../../lib/supabase');
+    supabase.from('stops').select('*').eq('id', stopId).single().then(({ data }: any) => {
+      if (!data) return;
+      setTitle(data.title ?? '');
+      setNotes(data.notes ?? '');
+      setLocationName(data.location_name ?? '');
+      setLat(data.lat ?? null);
+      setLng(data.lng ?? null);
+      setStartTime(data.start_time ? new Date(data.start_time) : null);
+      setEndTime(data.end_time ? new Date(data.end_time) : null);
+      setCategory(data.category ?? null);
+      setBookingUrl(data.booking_url ?? '');
+    });
+  }, [stopId]);
 
   function handleSelectPlace(name: string, la: number | null, ln: number | null) {
     setLocationName(name);
@@ -201,24 +226,59 @@ export default function AddStopScreen() {
     setLng(ln);
   }
 
-  async function handleAdd() {
+  async function handleSave() {
     if (!title.trim()) { Alert.alert('Please enter a stop name'); return; }
-    if (!user) return;
+    if (startTime && endTime && startTime >= endTime) {
+      Alert.alert('Invalid times', 'End date & time must be after start date & time.');
+      return;
+    }
+    if (trip?.start_date || trip?.end_date) {
+      const tripStart = trip.start_date ? new Date(trip.start_date + 'T00:00:00') : null;
+      const tripEnd = trip.end_date ? new Date(trip.end_date + 'T23:59:59') : null;
+      const checkTime = startTime ?? endTime;
+      if (checkTime) {
+        if (tripStart && checkTime < tripStart) {
+          Alert.alert('Out of range', `This stop is before the trip start date (${trip.start_date}).`);
+          return;
+        }
+        if (tripEnd && checkTime > tripEnd) {
+          Alert.alert('Out of range', `This stop is after the trip end date (${trip.end_date}).`);
+          return;
+        }
+      }
+    }
+    if (!user) { Alert.alert('Not signed in'); return; }
     setLoading(true);
     try {
-      await createStop({
-        trip_id: tripId,
-        created_by: user.id,
-        title: title.trim(),
-        notes: notes.trim() || null,
-        location_name: locationName || null,
-        lat,
-        lng,
-        start_time: startTime?.toISOString() ?? null,
-        end_time: endTime?.toISOString() ?? null,
-        day_index: dayIndex ?? 0,
-        sort_order: 0,
-      });
+      if (isEditing && stopId) {
+        await updateStop(stopId, {
+          title: title.trim(),
+          notes: notes.trim() || null,
+          location_name: locationName || null,
+          lat,
+          lng,
+          start_time: startTime?.toISOString() ?? null,
+          end_time: endTime?.toISOString() ?? null,
+          category,
+          booking_url: bookingUrl.trim() || null,
+        });
+      } else {
+        await createStop({
+          trip_id: tripId,
+          created_by: user.id,
+          title: title.trim(),
+          notes: notes.trim() || null,
+          location_name: locationName || null,
+          lat,
+          lng,
+          start_time: startTime?.toISOString() ?? null,
+          end_time: endTime?.toISOString() ?? null,
+          day_index: dayIndex ?? 0,
+          sort_order: 0,
+          category,
+          booking_url: bookingUrl.trim() || null,
+        });
+      }
       if (nav.canGoBack()) {
         nav.goBack();
       } else {
@@ -235,6 +295,9 @@ export default function AddStopScreen() {
     <ScrollView style={styles.container} keyboardShouldPersistTaps="handled" contentContainerStyle={styles.content}>
       <Text style={styles.label}>Stop Name *</Text>
       <TextInput style={styles.input} placeholder="e.g. Eiffel Tower" value={title} onChangeText={setTitle} />
+
+      <Text style={styles.label}>Category</Text>
+      <CategoryPicker categories={STOP_CATEGORIES} value={category} onChange={setCategory} />
 
       <Text style={styles.label}>Location</Text>
       {Platform.OS === 'web' ? (
@@ -257,10 +320,13 @@ export default function AddStopScreen() {
       <Text style={styles.label}>Notes</Text>
       <TextInput style={[styles.input, styles.textarea]} placeholder="Any notes about this stop..." multiline numberOfLines={3} value={notes} onChangeText={setNotes} />
 
+      <Text style={styles.label}>Booking Link</Text>
+      <TextInput style={styles.input} placeholder="https://..." value={bookingUrl} onChangeText={setBookingUrl} keyboardType="url" autoCapitalize="none" />
+
       <DateTimeInput label="Start Date & Time" value={startTime} onChange={setStartTime} />
       <DateTimeInput label="End Date & Time" value={endTime} onChange={setEndTime} />
 
-      <Button title="Add Stop" onPress={handleAdd} loading={loading} style={styles.addBtn} />
+      <Button title={isEditing ? 'Save Changes' : 'Add Stop'} onPress={handleSave} loading={loading} style={styles.addBtn} />
     </ScrollView>
   );
 }

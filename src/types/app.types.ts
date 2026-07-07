@@ -13,8 +13,11 @@ export interface Trip {
   start_date: string | null;
   end_date: string | null;
   cover_image_url: string | null;
+  cover_icon: string | null;
   invite_token: string;
   created_at: string;
+  budget: number | null;
+  budget_currency: string | null;
 }
 
 export interface TripMember {
@@ -38,7 +41,9 @@ export interface Stop {
   end_time: string | null;
   day_index: number | null;
   sort_order: number;
+  category: string | null;
   created_at: string;
+  booking_url: string | null;
 }
 
 export interface Expense {
@@ -50,7 +55,9 @@ export interface Expense {
   currency: string;
   paid_by: string;
   stop_id: string | null;
+  category: string | null;
   created_at: string;
+  receipt_url: string | null;
   splits?: ExpenseSplit[];
   payer?: Profile;
 }
@@ -61,6 +68,16 @@ export interface ExpenseSplit {
   user_id: string;
   share: number;
   profile?: Profile;
+}
+
+export interface TripChecklistItem {
+  id: string;
+  trip_id: string;
+  user_id: string;
+  label: string;
+  checked: boolean;
+  sort_order: number;
+  created_at: string;
 }
 
 export interface Media {

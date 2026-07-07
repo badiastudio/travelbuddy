@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { View, StyleSheet, Text } from 'react-native';
-import MapView, { Marker, Polyline, PROVIDER_GOOGLE } from 'react-native-maps';
+import MapView, { Marker, Polyline } from 'react-native-maps';
 import { MaterialTopTabScreenProps } from '@react-navigation/material-top-tabs';
 import { useItinerary } from '../../hooks/useItinerary';
 import { TripTabParamList } from '../../navigation/types';
@@ -12,7 +12,15 @@ export default function MapViewScreen({ route }: Props) {
   const { stops, loading } = useItinerary(tripId);
 
   const stopsWithCoords = useMemo(
-    () => stops.filter((s) => s.lat !== null && s.lng !== null),
+    () => stops
+      .filter((s) => s.lat !== null && s.lng !== null)
+      .sort((a, b) => {
+        if (a.day_index !== b.day_index) return (a.day_index ?? 0) - (b.day_index ?? 0);
+        if (a.start_time && b.start_time) return new Date(a.start_time).getTime() - new Date(b.start_time).getTime();
+        if (a.start_time) return -1;
+        if (b.start_time) return 1;
+        return a.sort_order - b.sort_order;
+      }),
     [stops]
   );
 
@@ -44,7 +52,6 @@ export default function MapViewScreen({ route }: Props) {
   return (
     <MapView
       style={styles.map}
-      provider={PROVIDER_GOOGLE}
       region={region}
       showsUserLocation
     >

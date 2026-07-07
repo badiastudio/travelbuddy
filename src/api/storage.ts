@@ -1,8 +1,37 @@
-import { Platform } from 'react-native';
 import { supabase } from '../lib/supabase';
 import { Media } from '../types/app.types';
 
 const BUCKET = 'trip-media';
+
+async function uriToArrayBuffer(uri: string): Promise<ArrayBuffer> {
+  if (uri.startsWith('data:')) {
+    const base64 = uri.split(',')[1];
+    const binary = atob(base64);
+    const buf = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) buf[i] = binary.charCodeAt(i);
+    return buf.buffer;
+  }
+  const response = await fetch(uri);
+  return response.arrayBuffer();
+}
+
+export async function uploadTripCover(
+  tripId: string,
+  localUri: string,
+  fileName: string,
+  mimeType: string
+): Promise<string> {
+  const arrayBuffer = await uriToArrayBuffer(localUri);
+  const storagePath = `covers/${tripId}/${Date.now()}_${fileName}`;
+
+  const { error } = await supabase.storage
+    .from(BUCKET)
+    .upload(storagePath, arrayBuffer, { contentType: mimeType, upsert: true });
+  if (error) throw error;
+
+  const { data } = await supabase.storage.from(BUCKET).createSignedUrl(storagePath, 60 * 60 * 24 * 365);
+  return data?.signedUrl ?? storagePath;
+}
 
 export async function uploadMedia(
   tripId: string,
@@ -11,18 +40,7 @@ export async function uploadMedia(
   fileName: string,
   mimeType: string
 ): Promise<string> {
-  let base64: string;
-  if (localUri.startsWith('data:')) {
-    // Web: data URL — strip the prefix
-    base64 = localUri.split(',')[1];
-  } else {
-    // Native: use expo-file-system
-    const FileSystem = require('expo-file-system');
-    base64 = await FileSystem.readAsStringAsync(localUri, {
-      encoding: FileSystem.EncodingType.Base64,
-    });
-  }
-  const arrayBuffer = Uint8Array.from(atob(base64), (c) => c.charCodeAt(0));
+  const arrayBuffer = await uriToArrayBuffer(localUri);
   const storagePath = `${tripId}/${userId}/${Date.now()}_${fileName}`;
 
   const { error } = await supabase.storage
@@ -40,12 +58,15 @@ export async function getSignedUrl(storagePath: string, expiresIn = 3600): Promi
   return data.signedUrl;
 }
 
-export async function fetchMedia(tripId: string): Promise<Media[]> {
-  const { data, error } = await supabase
+export async function fetchMedia(tripId: string, archived = false): Promise<Media[]> {
+  const query = supabase
     .from('media')
     .select('*')
     .eq('trip_id', tripId)
     .order('created_at', { ascending: false });
+  const { data, error } = await (archived
+    ? query.eq('archived', true)
+    : query.or('archived.eq.false,archived.is.null'));
   if (error) throw error;
 
   const items = await Promise.all(
@@ -72,5 +93,27 @@ export async function saveMediaRecord(
 export async function deleteMedia(mediaId: string, storagePath: string): Promise<void> {
   await supabase.storage.from(BUCKET).remove([storagePath]);
   const { error } = await supabase.from('media').delete().eq('id', mediaId);
+  if (error) throw error;
+}
+
+export async function deleteAllMedia(tripId: string, storagePaths: string[]): Promise<void> {
+  if (storagePaths.length > 0) await supabase.storage.from(BUCKET).remove(storagePaths);
+  const { error } = await supabase.from('media').delete().eq('trip_id', tripId);
+  if (error) throw error;
+}
+
+export async function archiveMediaItems(mediaIds: string[]): Promise<void> {
+  const { error } = await supabase.from('media').update({ archived: true }).in('id', mediaIds);
+  if (error) throw error;
+}
+
+export async function unarchiveMediaItems(mediaIds: string[]): Promise<void> {
+  const { error } = await supabase.from('media').update({ archived: false }).in('id', mediaIds);
+  if (error) throw error;
+}
+
+export async function deleteMediaItems(mediaIds: string[], storagePaths: string[]): Promise<void> {
+  if (storagePaths.length > 0) await supabase.storage.from(BUCKET).remove(storagePaths);
+  const { error } = await supabase.from('media').delete().in('id', mediaIds);
   if (error) throw error;
 }
