@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, TextInput, StyleSheet, ScrollView, Alert, TouchableOpacity, Platform } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
@@ -8,6 +8,7 @@ import { useAuthStore } from '../../store/authStore';
 import Button from '../../components/common/Button';
 import { AppStackParamList } from '../../navigation/types';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { fetchTemplates, applyTemplatesToTrip, PackingTemplate } from '../../api/packingTemplates';
 
 type Nav = StackNavigationProp<AppStackParamList>;
 
@@ -62,6 +63,21 @@ export default function CreateTripScreen() {
   const [endDate, setEndDate] = useState<Date | null>(null);
   const [loading, setLoading] = useState(false);
   const [selectedTemplate, setSelectedTemplate] = useState<string | null>(null);
+  const [packingTemplates, setPackingTemplates] = useState<PackingTemplate[]>([]);
+  const [selectedPackingIds, setSelectedPackingIds] = useState<Set<string>>(new Set());
+
+  useEffect(() => {
+    if (!user) return;
+    fetchTemplates(user.id).then(setPackingTemplates).catch(() => {});
+  }, [user]);
+
+  function togglePackingTemplate(id: string) {
+    setSelectedPackingIds((prev) => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  }
 
   async function handleCreate() {
     if (!title.trim()) { Alert.alert('Please enter a trip name'); return; }
@@ -74,6 +90,11 @@ export default function CreateTripScreen() {
         start_date: startDate ? format(startDate, 'yyyy-MM-dd') : null,
         end_date: endDate ? format(endDate, 'yyyy-MM-dd') : null,
       });
+      if (selectedPackingIds.size > 0) {
+        try {
+          await applyTemplatesToTrip(trip.id, user.id, Array.from(selectedPackingIds));
+        } catch {}
+      }
       nav.replace('TripDetail', { tripId: trip.id });
     } catch (e: any) {
       Alert.alert('Error', e.message);
@@ -126,6 +147,29 @@ export default function CreateTripScreen() {
         <DateInput label="Start Date" value={startDate} onChange={setStartDate} />
         <DateInput label="End Date" value={endDate} onChange={setEndDate} />
 
+        {packingTemplates.length > 0 && (
+          <>
+            <Text style={styles.label}>Include Packing Templates</Text>
+            <Text style={styles.templateHint}>Copy items from your saved packing lists into this trip.</Text>
+            <View style={styles.packingList}>
+              {packingTemplates.map((t) => {
+                const selected = selectedPackingIds.has(t.id);
+                return (
+                  <TouchableOpacity
+                    key={t.id}
+                    style={[styles.packingChip, selected && styles.packingChipSelected]}
+                    onPress={() => togglePackingTemplate(t.id)}
+                  >
+                    <Text style={[styles.packingChipText, selected && styles.packingChipTextSelected]}>
+                      {selected ? '✓ ' : ''}🧳 {t.name} ({t.item_count})
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          </>
+        )}
+
         <Button title="Create Trip" onPress={handleCreate} loading={loading} style={styles.createBtn} />
       </ScrollView>
     </SafeAreaView>
@@ -150,4 +194,10 @@ const styles = StyleSheet.create({
   templateChipActive: { backgroundColor: '#2563EB', borderColor: '#2563EB' },
   templateChipText: { fontSize: 14, color: '#374151', fontWeight: '500' },
   templateChipTextActive: { color: '#fff' },
+  templateHint: { fontSize: 12, color: '#6B7280', marginBottom: 6 },
+  packingList: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 4 },
+  packingChip: { paddingHorizontal: 12, paddingVertical: 8, borderRadius: 12, borderWidth: 1.5, borderColor: '#D1D5DB', backgroundColor: '#F9FAFB' },
+  packingChipSelected: { borderColor: '#2563EB', backgroundColor: '#EFF6FF' },
+  packingChipText: { fontSize: 13, color: '#374151', fontWeight: '600' },
+  packingChipTextSelected: { color: '#2563EB' },
 });

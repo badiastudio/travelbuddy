@@ -1,7 +1,9 @@
 import { supabase } from '../lib/supabase';
 import { TripChecklistItem } from '../types/app.types';
+import { validateUUID, validateString, validateItemID } from '../lib/validation';
 
 export async function fetchChecklistItems(tripId: string): Promise<TripChecklistItem[]> {
+  validateUUID(tripId, 'trip ID');
   const { data, error } = await supabase
     .from('trip_checklist')
     .select('*')
@@ -16,6 +18,10 @@ export async function createChecklistItem(
   userId: string,
   label: string,
 ): Promise<TripChecklistItem> {
+  validateUUID(tripId, 'trip ID');
+  validateUUID(userId, 'user ID');
+  validateString(label, 'label', 1, 500);
+
   const { data: existing } = await supabase
     .from('trip_checklist')
     .select('sort_order')
@@ -34,6 +40,7 @@ export async function createChecklistItem(
 }
 
 export async function toggleChecklistItem(id: string, checked: boolean): Promise<void> {
+  validateItemID(id);
   const { error } = await supabase
     .from('trip_checklist')
     .update({ checked })
@@ -42,6 +49,7 @@ export async function toggleChecklistItem(id: string, checked: boolean): Promise
 }
 
 export async function deleteChecklistItem(id: string): Promise<void> {
+  validateItemID(id);
   const { error } = await supabase
     .from('trip_checklist')
     .delete()

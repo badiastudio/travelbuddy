@@ -12,7 +12,9 @@ export default function ForgotPasswordScreen() {
     if (!email) return;
     setLoading(true);
     try {
-      const { error } = await supabase.auth.resetPasswordForEmail(email.trim());
+      const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
+        redirectTo: 'travelpro://reset-password',
+      });
       if (error) throw error;
       setSent(true);
     } catch (e: any) {

@@ -1,4 +1,5 @@
 import { supabase } from '../lib/supabase';
+import { validateUUID, validateUUIDArray, validateEnum } from '../lib/validation';
 
 export interface VoteSummary {
   upvotes: number;
@@ -7,6 +8,9 @@ export interface VoteSummary {
 }
 
 export async function fetchVotes(stopId: string, userId: string): Promise<VoteSummary> {
+  validateUUID(stopId, 'stop ID');
+  validateUUID(userId, 'user ID');
+
   const { data, error } = await supabase
     .from('stop_votes')
     .select('*')
@@ -26,6 +30,9 @@ export async function fetchVotesForStops(
   userId: string
 ): Promise<Map<string, { up: number; down: number; mine: 1 | -1 | null }>> {
   if (stopIds.length === 0) return new Map();
+  validateUUIDArray(stopIds, 'stop IDs');
+  validateUUID(userId, 'user ID');
+
   const { data, error } = await supabase
     .from('stop_votes')
     .select('*')
@@ -47,6 +54,10 @@ export async function fetchVotesForStops(
 }
 
 export async function upsertVote(stopId: string, userId: string, vote: 1 | -1): Promise<void> {
+  validateUUID(stopId, 'stop ID');
+  validateUUID(userId, 'user ID');
+  validateEnum(vote, [1, -1], 'vote');
+
   const { error } = await supabase.from('stop_votes').upsert(
     { stop_id: stopId, user_id: userId, vote },
     { onConflict: 'stop_id,user_id' }
@@ -55,6 +66,9 @@ export async function upsertVote(stopId: string, userId: string, vote: 1 | -1): 
 }
 
 export async function deleteVote(stopId: string, userId: string): Promise<void> {
+  validateUUID(stopId, 'stop ID');
+  validateUUID(userId, 'user ID');
+
   const { error } = await supabase
     .from('stop_votes')
     .delete()

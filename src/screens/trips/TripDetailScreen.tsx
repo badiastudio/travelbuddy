@@ -79,7 +79,9 @@ function TripDetailInner({ tripId }: { tripId: string }) {
         </ImageBackground>
       )
     : ({ children }: { children: React.ReactNode }) => (
-        <View style={[styles.banner, styles.bannerSolid]}>{children}</View>
+        <View style={[styles.banner, styles.bannerSolid]}>
+          <View style={styles.bannerOverlaySolid}>{children}</View>
+        </View>
       );
 
   return (
@@ -150,6 +152,7 @@ const styles = StyleSheet.create({
   bannerSolid: { backgroundColor: '#1E3A5F' },
   bannerImage: { resizeMode: 'cover' },
   bannerOverlay: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 14, backgroundColor: 'rgba(0,0,0,0.35)' },
+  bannerOverlaySolid: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 14 },
   backBtn: { width: 36, height: 36, alignItems: 'center', justifyContent: 'center' },
   backText: { fontSize: 28, color: '#fff', lineHeight: 32 },
   bannerCenter: { flex: 1, alignItems: 'center', paddingHorizontal: 8 },

@@ -30,6 +30,10 @@ export default function ProfileScreen() {
         <Text style={styles.name}>{profile?.display_name ?? 'Traveler'}</Text>
         {user?.email && <Text style={styles.email}>{user.email}</Text>}
 
+        <TouchableOpacity style={styles.templatesBtn} onPress={() => nav.navigate('PackingTemplates')}>
+          <Text style={styles.templatesText}>🧳  My Packing Templates</Text>
+        </TouchableOpacity>
+
         {isAdmin && (
           <TouchableOpacity style={styles.adminBtn} onPress={() => nav.navigate('Admin')}>
             <Text style={styles.adminText}>⚙️  Admin Dashboard</Text>
@@ -51,7 +55,9 @@ const styles = StyleSheet.create({
   body: { flex: 1, alignItems: 'center', paddingTop: 48, gap: 12 },
   name: { fontSize: 20, fontWeight: '700', color: '#111827' },
   email: { fontSize: 14, color: '#6B7280' },
-  adminBtn: { marginTop: 24, backgroundColor: '#2563EB', borderRadius: 10, paddingVertical: 12, paddingHorizontal: 32 },
+  templatesBtn: { marginTop: 24, backgroundColor: '#EFF6FF', borderRadius: 10, paddingVertical: 12, paddingHorizontal: 32, borderWidth: 1.5, borderColor: '#2563EB' },
+  templatesText: { color: '#2563EB', fontWeight: '700', fontSize: 15 },
+  adminBtn: { marginTop: 8, backgroundColor: '#2563EB', borderRadius: 10, paddingVertical: 12, paddingHorizontal: 32 },
   adminText: { color: '#fff', fontWeight: '700', fontSize: 15 },
   signOutBtn: { marginTop: 8, borderWidth: 1, borderColor: '#DC2626', borderRadius: 10, paddingVertical: 12, paddingHorizontal: 32 },
   signOutText: { color: '#DC2626', fontWeight: '600', fontSize: 16 },

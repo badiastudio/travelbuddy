@@ -1,4 +1,5 @@
 import { supabase } from '../lib/supabase';
+import { validateUUID, validateString, validateItemID } from '../lib/validation';
 
 export interface StopComment {
   id: string;
@@ -11,6 +12,7 @@ export interface StopComment {
 }
 
 export async function fetchComments(stopId: string): Promise<StopComment[]> {
+  validateUUID(stopId, 'stop ID');
   const { data, error } = await supabase
     .from('stop_comments')
     .select('*, profile:profiles(display_name)')
@@ -21,6 +23,11 @@ export async function fetchComments(stopId: string): Promise<StopComment[]> {
 }
 
 export async function addComment(stopId: string, tripId: string, userId: string, text: string): Promise<void> {
+  validateUUID(stopId, 'stop ID');
+  validateUUID(tripId, 'trip ID');
+  validateUUID(userId, 'user ID');
+  validateString(text, 'comment text', 1, 5000);
+
   const { error } = await supabase
     .from('stop_comments')
     .insert({ stop_id: stopId, trip_id: tripId, user_id: userId, text });
@@ -28,6 +35,7 @@ export async function addComment(stopId: string, tripId: string, userId: string,
 }
 
 export async function deleteComment(commentId: string): Promise<void> {
+  validateItemID(commentId);
   const { error } = await supabase
     .from('stop_comments')
     .delete()

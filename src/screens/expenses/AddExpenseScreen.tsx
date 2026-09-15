@@ -38,6 +38,7 @@ export default function AddExpenseScreen() {
   const [receiptUri, setReceiptUri] = useState<string | null>(null);
   const [receiptStoragePath, setReceiptStoragePath] = useState<string | null>(null);
   const fileInputRef = useRef<any>(null);
+  const [repeatCount, setRepeatCount] = useState(1);
 
   useEffect(() => {
     fetchMembers(tripId).then((m) => {
@@ -140,10 +141,14 @@ export default function AddExpenseScreen() {
           splits
         );
       } else {
-        await createExpense(
-          { trip_id: tripId, created_by: user.id, title: title.trim(), amount: amt, currency, paid_by: paidById, stop_id: null, category, receipt_url: finalReceiptPath },
-          splits
-        );
+        const count = Math.max(1, Math.min(30, repeatCount));
+        for (let i = 0; i < count; i++) {
+          const suffix = count > 1 ? ` (Day ${i + 1})` : '';
+          await createExpense(
+            { trip_id: tripId, created_by: user.id, title: title.trim() + suffix, amount: amt, currency, paid_by: paidById, stop_id: null, category, receipt_url: finalReceiptPath },
+            splits
+          );
+        }
       }
       if (nav.canGoBack()) {
         nav.goBack();
@@ -241,7 +246,56 @@ export default function AddExpenseScreen() {
         </Text>
       )}
 
-      <Button title={isEditing ? 'Save Changes' : 'Add Expense'} onPress={handleSave} loading={loading} style={styles.addBtn} />
+      {!isEditing && (
+        <>
+          <Text style={styles.label}>Repeat for multiple days?</Text>
+          <Text style={styles.repeatHint}>Great for hotels, daily meals, or recurring costs.</Text>
+          <View style={styles.repeatRow}>
+            <TouchableOpacity
+              style={[styles.repeatBtn, repeatCount <= 1 && styles.repeatBtnDisabled]}
+              onPress={() => setRepeatCount(Math.max(1, repeatCount - 1))}
+              disabled={repeatCount <= 1}
+            >
+              <Text style={styles.repeatBtnText}>−</Text>
+            </TouchableOpacity>
+            <View style={styles.repeatCountBox}>
+              <Text style={styles.repeatCountText}>{repeatCount}</Text>
+              <Text style={styles.repeatCountLabel}>{repeatCount === 1 ? 'day' : 'days'}</Text>
+            </View>
+            <TouchableOpacity
+              style={styles.repeatBtn}
+              onPress={() => setRepeatCount(Math.min(30, repeatCount + 1))}
+            >
+              <Text style={styles.repeatBtnText}>+</Text>
+            </TouchableOpacity>
+          </View>
+          <View style={styles.presetsRow}>
+            {[1, 3, 5, 7, 14].map((n) => (
+              <TouchableOpacity
+                key={n}
+                style={[styles.presetChip, repeatCount === n && styles.presetChipActive]}
+                onPress={() => setRepeatCount(n)}
+              >
+                <Text style={[styles.presetChipText, repeatCount === n && styles.presetChipTextActive]}>
+                  {n === 1 ? 'Once' : `${n}x`}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+          {repeatCount > 1 && amount && !isNaN(parseFloat(amount)) && (
+            <Text style={styles.repeatTotal}>
+              Total: ${(parseFloat(amount) * repeatCount).toFixed(2)} ({repeatCount} entries)
+            </Text>
+          )}
+        </>
+      )}
+
+      <Button
+        title={isEditing ? 'Save Changes' : repeatCount > 1 ? `Add ${repeatCount} Expenses` : 'Add Expense'}
+        onPress={handleSave}
+        loading={loading}
+        style={styles.addBtn}
+      />
     </ScrollView>
   );
 }
@@ -270,4 +324,18 @@ const styles = StyleSheet.create({
   currencyChipText: { fontSize: 13, fontWeight: '600', color: '#374151' },
   currencyChipTextActive: { color: '#2563EB' },
   conversionHint: { marginTop: 6, fontSize: 13, color: '#6B7280', fontWeight: '500' },
+  repeatHint: { fontSize: 12, color: '#6B7280', marginBottom: 12 },
+  repeatRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 20, marginTop: 4, marginBottom: 12 },
+  repeatBtn: { width: 44, height: 44, borderRadius: 22, borderWidth: 2, borderColor: '#2563EB', alignItems: 'center', justifyContent: 'center', backgroundColor: '#EFF6FF' },
+  repeatBtnDisabled: { borderColor: '#D1D5DB', backgroundColor: '#F3F4F6' },
+  repeatBtnText: { fontSize: 22, color: '#2563EB', fontWeight: '700' },
+  repeatCountBox: { alignItems: 'center', minWidth: 80 },
+  repeatCountText: { fontSize: 32, fontWeight: '800', color: '#111827' },
+  repeatCountLabel: { fontSize: 12, color: '#6B7280', textTransform: 'uppercase', fontWeight: '600', letterSpacing: 0.5 },
+  presetsRow: { flexDirection: 'row', gap: 8, justifyContent: 'center', flexWrap: 'wrap' },
+  presetChip: { paddingHorizontal: 14, paddingVertical: 6, borderRadius: 14, borderWidth: 1.5, borderColor: '#D1D5DB', backgroundColor: '#F9FAFB' },
+  presetChipActive: { borderColor: '#2563EB', backgroundColor: '#EFF6FF' },
+  presetChipText: { fontSize: 13, fontWeight: '600', color: '#6B7280' },
+  presetChipTextActive: { color: '#2563EB' },
+  repeatTotal: { marginTop: 12, fontSize: 14, color: '#2563EB', fontWeight: '700', textAlign: 'center' },
 });

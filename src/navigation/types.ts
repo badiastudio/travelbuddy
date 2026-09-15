@@ -34,6 +34,9 @@ export type TripStackParamList = {
 export type AppStackParamList = {
   Tabs: undefined;
   Admin: undefined;
+  JoinTrip: undefined;
+  PackingTemplates: undefined;
+  PackingTemplateDetail: { templateId: string; name: string };
 } & TripStackParamList;
 
 export type TabParamList = {

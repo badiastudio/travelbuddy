@@ -1,5 +1,6 @@
 import { supabase } from '../lib/supabase';
 import { Profile } from '../types/app.types';
+import { validateUUID, validateString, validateItemID } from '../lib/validation';
 
 export interface TripMessage {
   id: string;
@@ -11,6 +12,7 @@ export interface TripMessage {
 }
 
 export async function fetchMessages(tripId: string): Promise<TripMessage[]> {
+  validateUUID(tripId, 'trip ID');
   const { data, error } = await supabase
     .from('trip_messages')
     .select('*, profile:profiles(display_name, avatar_url)')
@@ -21,6 +23,10 @@ export async function fetchMessages(tripId: string): Promise<TripMessage[]> {
 }
 
 export async function sendMessage(tripId: string, userId: string, message: string): Promise<void> {
+  validateUUID(tripId, 'trip ID');
+  validateUUID(userId, 'user ID');
+  validateString(message, 'message', 1, 10000);
+
   const { error } = await supabase
     .from('trip_messages')
     .insert({ trip_id: tripId, user_id: userId, message });
@@ -28,6 +34,7 @@ export async function sendMessage(tripId: string, userId: string, message: strin
 }
 
 export async function deleteMessage(messageId: string): Promise<void> {
+  validateItemID(messageId);
   const { error } = await supabase
     .from('trip_messages')
     .delete()

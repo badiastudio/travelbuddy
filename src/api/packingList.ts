@@ -1,6 +1,7 @@
 // SQL: ALTER TABLE packing_items ADD COLUMN IF NOT EXISTS assigned_to uuid REFERENCES auth.users(id);
 
 import { supabase } from '../lib/supabase';
+import { validateUUID, validateString, validateItemID } from '../lib/validation';
 
 export interface PackingItem {
   id: string;
@@ -14,6 +15,10 @@ export interface PackingItem {
 }
 
 export async function assignPackingItem(itemId: string, userId: string | null): Promise<void> {
+  validateItemID(itemId);
+  if (userId !== null) {
+    validateUUID(userId, 'user ID');
+  }
   const { error } = await supabase
     .from('packing_items')
     .update({ assigned_to: userId })
@@ -22,6 +27,7 @@ export async function assignPackingItem(itemId: string, userId: string | null): 
 }
 
 export async function fetchPackingItems(tripId: string): Promise<PackingItem[]> {
+  validateUUID(tripId, 'trip ID');
   const { data, error } = await supabase
     .from('packing_items')
     .select('*')
@@ -32,6 +38,10 @@ export async function fetchPackingItems(tripId: string): Promise<PackingItem[]> 
 }
 
 export async function createPackingItem(tripId: string, userId: string, text: string): Promise<PackingItem> {
+  validateUUID(tripId, 'trip ID');
+  validateUUID(userId, 'user ID');
+  validateString(text, 'item text', 1, 500);
+
   const { data: existing } = await supabase
     .from('packing_items')
     .select('sort_order')
@@ -50,6 +60,7 @@ export async function createPackingItem(tripId: string, userId: string, text: st
 }
 
 export async function togglePackingItem(itemId: string, checked: boolean): Promise<void> {
+  validateItemID(itemId);
   const { error } = await supabase
     .from('packing_items')
     .update({ checked })
@@ -58,6 +69,7 @@ export async function togglePackingItem(itemId: string, checked: boolean): Promi
 }
 
 export async function deletePackingItem(itemId: string): Promise<void> {
+  validateItemID(itemId);
   const { error } = await supabase
     .from('packing_items')
     .delete()
@@ -66,6 +78,7 @@ export async function deletePackingItem(itemId: string): Promise<void> {
 }
 
 export async function deleteAllPackingItems(tripId: string): Promise<void> {
+  validateUUID(tripId, 'trip ID');
   const { error } = await supabase
     .from('packing_items')
     .delete()

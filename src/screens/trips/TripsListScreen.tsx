@@ -68,12 +68,20 @@ export default function TripsListScreen() {
       )}
       <View style={styles.header}>
         <Text style={styles.headerTitle}>My Trips</Text>
-        <TouchableOpacity
-          style={styles.newBtn}
-          onPress={() => nav.navigate('TripDetail', { tripId: 'new' })}
-        >
-          <Text style={styles.newBtnText}>+ New</Text>
-        </TouchableOpacity>
+        <View style={styles.headerBtns}>
+          <TouchableOpacity
+            style={styles.joinBtn}
+            onPress={() => nav.navigate('JoinTrip')}
+          >
+            <Text style={styles.joinBtnText}>🎟️ Join</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.newBtn}
+            onPress={() => nav.navigate('TripDetail', { tripId: 'new' })}
+          >
+            <Text style={styles.newBtnText}>+ New</Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
       <FlatList
@@ -129,6 +137,9 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F9FAFB' },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: 60, paddingBottom: 16, backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#E5E7EB' },
   headerTitle: { fontSize: 24, fontWeight: '700', color: '#111827' },
+  headerBtns: { flexDirection: 'row', gap: 8, alignItems: 'center' },
+  joinBtn: { borderRadius: 8, paddingHorizontal: 12, paddingVertical: 8, borderWidth: 1.5, borderColor: '#2563EB' },
+  joinBtnText: { color: '#2563EB', fontWeight: '600', fontSize: 14 },
   newBtn: { backgroundColor: '#2563EB', borderRadius: 8, paddingHorizontal: 16, paddingVertical: 8 },
   newBtnText: { color: '#fff', fontWeight: '600', fontSize: 15 },
   list: { padding: 16, gap: 12 },

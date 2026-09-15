@@ -1,7 +1,9 @@
 import { supabase } from '../lib/supabase';
 import { Trip, TripMember } from '../types/app.types';
+import { validateUUID, validateTripID } from '../lib/validation';
 
 export async function fetchTrips(userId: string): Promise<Trip[]> {
+  validateUUID(userId, 'user ID');
   const { data, error } = await supabase
     .from('trips')
     .select('*, trip_members!inner(user_id)')
@@ -11,13 +13,35 @@ export async function fetchTrips(userId: string): Promise<Trip[]> {
   return data ?? [];
 }
 
-export async function fetchTrip(tripId: string): Promise<Trip> {
+export async function fetchTrip(tripId: string): Promise<Trip | null> {
+  validateTripID(tripId);
+
+  // Get current user
+  const { data: { user }, error: authError } = await supabase.auth.getUser();
+  if (authError || !user) {
+    throw new Error('User is not authenticated');
+  }
+
+  // Fetch the trip
   const { data, error } = await supabase
     .from('trips')
     .select('*')
     .eq('id', tripId)
     .single();
-  if (error) throw error;
+  if (error) {
+    if (error.code === 'PGRST116') return null; // Not found
+    throw error;
+  }
+
+  // Verify user is a trip member
+  const { data: isMember, error: memberError } = await supabase
+    .rpc('is_trip_member', { trip: tripId });
+  if (memberError) throw memberError;
+
+  if (!isMember) {
+    throw new Error('You do not have access to this trip');
+  }
+
   return data;
 }
 
@@ -25,6 +49,7 @@ export async function createTrip(
   ownerId: string,
   trip: Pick<Trip, 'title' | 'description' | 'start_date' | 'end_date'>
 ): Promise<Trip> {
+  validateUUID(ownerId, 'owner ID');
   // Insert trip and get back the row (owner_id = auth.uid() satisfies insert policy)
   const { data, error: tripError } = await supabase
     .from('trips')
@@ -45,6 +70,7 @@ export async function createTrip(
 }
 
 export async function updateTrip(tripId: string, updates: Partial<Trip>): Promise<Trip> {
+  validateTripID(tripId);
   const { data, error } = await supabase
     .from('trips')
     .update(updates)
@@ -56,11 +82,28 @@ export async function updateTrip(tripId: string, updates: Partial<Trip>): Promis
 }
 
 export async function deleteTrip(tripId: string): Promise<void> {
+  validateTripID(tripId);
   const { error } = await supabase.from('trips').delete().eq('id', tripId);
   if (error) throw error;
 }
 
 export async function fetchMembers(tripId: string): Promise<TripMember[]> {
+  validateTripID(tripId);
+
+  // Verify user has access to this trip
+  const { data: { user }, error: authError } = await supabase.auth.getUser();
+  if (authError || !user) {
+    throw new Error('User is not authenticated');
+  }
+
+  const { data: isMember, error: memberError } = await supabase
+    .rpc('is_trip_member', { trip: tripId });
+  if (memberError) throw memberError;
+
+  if (!isMember) {
+    throw new Error('You do not have access to this trip');
+  }
+
   const { data, error } = await supabase
     .from('trip_members')
     .select('*, profile:profiles(*)')
@@ -70,7 +113,14 @@ export async function fetchMembers(tripId: string): Promise<TripMember[]> {
 }
 
 export async function duplicateTrip(originalTripId: string, userId: string): Promise<Trip> {
+  validateTripID(originalTripId);
+  validateUUID(userId, 'user ID');
+
   const original = await fetchTrip(originalTripId);
+  if (!original) {
+    throw new Error('Original trip not found');
+  }
+
   const { data, error } = await supabase
     .from('trips')
     .insert({
@@ -95,16 +145,9 @@ export async function duplicateTrip(originalTripId: string, userId: string): Pro
 }
 
 export async function joinTripByToken(userId: string, token: string): Promise<Trip> {
-  const { data: trip, error: tripError } = await supabase
-    .from('trips')
-    .select('*')
-    .eq('invite_token', token)
-    .single();
-  if (tripError) throw new Error('Invalid invite link');
-
-  const { error: memberError } = await supabase
-    .from('trip_members')
-    .upsert({ trip_id: trip.id, user_id: userId, role: 'member' });
-  if (memberError) throw memberError;
-  return trip;
+  validateUUID(userId, 'user ID');
+  const { data, error } = await supabase.rpc('join_trip_by_invite_token', { token });
+  if (error) throw new Error(error.message || 'Invalid invite code');
+  if (!data) throw new Error('Invalid invite code');
+  return data as Trip;
 }

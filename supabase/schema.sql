@@ -170,6 +170,111 @@ alter table public.media enable row level security;
 create policy "media: member all" on public.media for all using (is_trip_member(trip_id));
 
 -- ============================================================
+-- STOP COMMENTS
+-- ============================================================
+create table public.stop_comments (
+  id             uuid primary key default gen_random_uuid(),
+  stop_id        uuid not null references public.stops(id) on delete cascade,
+  trip_id        uuid not null references public.trips(id) on delete cascade,
+  user_id        uuid not null references public.profiles(id) on delete cascade,
+  text           text not null,
+  created_at     timestamptz default now()
+);
+
+alter table public.stop_comments enable row level security;
+create policy "stop_comments: member all" on public.stop_comments for all using (is_trip_member(trip_id));
+
+-- ============================================================
+-- STOP VOTES
+-- ============================================================
+create table public.stop_votes (
+  stop_id        uuid not null references public.stops(id) on delete cascade,
+  trip_id        uuid not null references public.trips(id) on delete cascade,
+  user_id        uuid not null references public.profiles(id) on delete cascade,
+  vote           int not null check (vote in (1, -1)),
+  created_at     timestamptz default now(),
+  primary key (stop_id, user_id)
+);
+
+alter table public.stop_votes enable row level security;
+create policy "stop_votes: member all" on public.stop_votes for all using (is_trip_member(trip_id));
+
+-- ============================================================
+-- TRIP CHECKLIST
+-- ============================================================
+create table public.trip_checklist (
+  id             uuid primary key default gen_random_uuid(),
+  trip_id        uuid not null references public.trips(id) on delete cascade,
+  user_id        uuid not null references public.profiles(id),
+  label          text not null,
+  checked        boolean default false,
+  sort_order     int default 0,
+  created_at     timestamptz default now()
+);
+
+alter table public.trip_checklist enable row level security;
+create policy "trip_checklist: member all" on public.trip_checklist for all using (is_trip_member(trip_id));
+
+-- ============================================================
+-- TRIP MESSAGES
+-- ============================================================
+create table public.trip_messages (
+  id             uuid primary key default gen_random_uuid(),
+  trip_id        uuid not null references public.trips(id) on delete cascade,
+  user_id        uuid not null references public.profiles(id) on delete cascade,
+  message        text not null,
+  created_at     timestamptz default now()
+);
+
+alter table public.trip_messages enable row level security;
+create policy "trip_messages: member all" on public.trip_messages for all using (is_trip_member(trip_id));
+
+-- ============================================================
+-- PACKING ITEMS
+-- ============================================================
+create table public.packing_items (
+  id             uuid primary key default gen_random_uuid(),
+  trip_id        uuid not null references public.trips(id) on delete cascade,
+  created_by     uuid not null references public.profiles(id),
+  text           text not null,
+  checked        boolean default false,
+  sort_order     int default 0,
+  assigned_to    uuid references public.profiles(id) on delete set null,
+  created_at     timestamptz default now()
+);
+
+alter table public.packing_items enable row level security;
+create policy "packing_items: member all" on public.packing_items for all using (is_trip_member(trip_id));
+
+-- ============================================================
+-- PACKING TEMPLATES
+-- ============================================================
+create table public.packing_templates (
+  id             uuid primary key default gen_random_uuid(),
+  user_id        uuid not null references public.profiles(id) on delete cascade,
+  name           text not null,
+  created_at     timestamptz default now()
+);
+
+alter table public.packing_templates enable row level security;
+create policy "packing_templates: creator all" on public.packing_templates for all using (user_id = auth.uid());
+
+-- ============================================================
+-- PACKING TEMPLATE ITEMS
+-- ============================================================
+create table public.packing_template_items (
+  id             uuid primary key default gen_random_uuid(),
+  template_id    uuid not null references public.packing_templates(id) on delete cascade,
+  text           text not null,
+  sort_order     int default 0,
+  created_at     timestamptz default now()
+);
+
+alter table public.packing_template_items enable row level security;
+create policy "packing_template_items: creator all" on public.packing_template_items for all
+  using (exists (select 1 from public.packing_templates where id = template_id and user_id = auth.uid()));
+
+-- ============================================================
 -- STORAGE
 -- ============================================================
 -- Run in Supabase Dashboard → Storage → New Bucket:

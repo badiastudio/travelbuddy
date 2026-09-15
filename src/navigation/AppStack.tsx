@@ -18,6 +18,9 @@ import NearbyAttractionsScreen from '../screens/itinerary/NearbyAttractionsScree
 import ActivityFeedScreen from '../screens/trips/ActivityFeedScreen';
 import TripChecklistScreen from '../screens/trips/TripChecklistScreen';
 import AdminScreen from '../screens/trips/AdminScreen';
+import JoinTripScreen from '../screens/trips/JoinTripScreen';
+import PackingTemplatesScreen from '../screens/trips/PackingTemplatesScreen';
+import PackingTemplateDetailScreen from '../screens/trips/PackingTemplateDetailScreen';
 
 const Tab = createBottomTabNavigator<TabParamList>();
 const AppNav = createStackNavigator<AppStackParamList & TripStackParamList>();
@@ -49,6 +52,9 @@ export default function AppStack() {
       <AppNav.Screen name="ActivityFeed" component={ActivityFeedScreen} options={{ headerShown: false }} />
       <AppNav.Screen name="TripChecklist" component={TripChecklistScreen} options={{ headerShown: true, title: 'Pre-trip Checklist' }} />
       <AppNav.Screen name="Admin" component={AdminScreen} options={{ headerShown: false }} />
+      <AppNav.Screen name="JoinTrip" component={JoinTripScreen} options={{ headerShown: false }} />
+      <AppNav.Screen name="PackingTemplates" component={PackingTemplatesScreen} options={{ headerShown: false }} />
+      <AppNav.Screen name="PackingTemplateDetail" component={PackingTemplateDetailScreen} options={{ headerShown: false }} />
     </AppNav.Navigator>
   );
 }
